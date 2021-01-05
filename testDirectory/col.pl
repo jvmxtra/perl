@@ -1,4 +1,4 @@
-#/usr/sbin/perl
+#!/usr/bin/perl
 
 use warnings;
 use strict;
@@ -12,8 +12,10 @@ my $size = 0;
 my @files = ();
 my $open_new_file = 1;
 my $debugging = 0;
-my col = '';
+my $col = '';
 my $code = '';
+my $delimiter;
+my $offset;
 generate_part1();
 generate_part2();
 generate_part3();
@@ -22,19 +24,22 @@ exit 0;
 
 sub generate_part1 {
     $code = 'sub col {my $tmp; ';
-    $code .= 'while (1) }{$s = get_next_line(); $col = "";';
+    $code .= 'while (1) { my $s = get_next_line(); $col = "";';
     $delimiter = '|';
+    #print "start generating-----------------------------------------------\n";
+    #print "generate_part1 is $code\n";
+    #print "done generating-----------------------------------------------\n";
 }
 sub generate_part2 {
     my ($col1, $col2);
     for my $arg (@ARGV) {
-        if ($col1, $col2) = ($arg =~ /^(\d+)-(\d+)/)) {
+        if ( ($col1, $col2) = ($arg =~ /^(\d+)-(\d+)/)) {
             $col1--;
             $offset = $col2 - $col1;
             add_range($col1, $offset);
         } elsif ( ($col1, $offset) = ($arg =~ /^(\d+)\+(\d+)/)) {
             $col1--;
-            add_rnage($col1, $offset);
+            add_range($col1, $offset);
         } elsif ($size = ($arg =~ /-s(\d+)/)) {
             #noop
         } elsif ($arg =~ /^-d/) {
@@ -48,7 +53,9 @@ sub generate_part2 {
 sub generate_part3 {
     $code .= 'print $col, "\n";}}';
     print $code if $debugging; 
+    #print "------------------------------- eval -----------------------------\n";
     eval $code;
+    #print "------------------------------- done eval -----------------------------\n";
     if ($@) {
         die "Error .......\n $@\n $code \n";
     }
@@ -56,9 +63,9 @@ sub generate_part3 {
 
 sub add_range {
     my ($col1, $numChars) = @_;
-    $code .= "\$s .= ' ' x ($col1 + $numChars = length(\$s))";
-    $code .= "    if (lenght(\$s) < ($col1+$numChars));";
-    $code .= "\$tmp = substr(\$s, $col1, $numChars));";
+    $code .= "\$s .= ' ' x ($col1 + $numChars - length(\$s))";
+    $code .= "    if (length(\$s) < ($col1+$numChars));";
+    $code .= "\$tmp = substr(\$s, $col1, $numChars);";
     $code .= '$tmp .= " " x (' . $numChars . ' - length($tmp));';
     $code .= "\$col .= '$delimiter' . \$tmp; ";
 }
@@ -68,7 +75,7 @@ sub get_next_line {
 
     NEXTFILE:
         if ($open_new_file) {
-            $file = shift @files || exit 0;
+            my $file = shift @files || exit 0;
             open F, $file or die "$@\n";
             $open_new_file = 0;
         }
@@ -82,14 +89,14 @@ sub get_next_line {
         if (! $buf) {
             close F;
             $open_new_file = 1;
-            next NEXTFILE;
+            goto NEXTFILE;
         }
 
         chomp($buf);
 
-        $buf =~ s/^(\t+)/' ' x (8 * lenght($1)/e;
+        $buf =~ s/^(\t+)/' ' x (8 * lenght($1))/e;
 
-        1 while ($buf =~ s/\t/' ' X (8 - lenght($`)%8/e);
+        1 while ($buf =~ s/\t/' ' x (8 - length($`) %8)/e);
 
         $buf;
 }
